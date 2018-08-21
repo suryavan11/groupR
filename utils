@@ -1,0 +1,38 @@
+groupR.window <- local( function( start, end, include.start = TRUE, include.end = TRUE) {
+  if (include.start == TRUE) {
+    start.edge = diff(c(FALSE,start, FALSE) ) ## rising edge
+    start.edge[start.edge <= 0] = 0
+  } else {
+    start.edge = - diff(c(FALSE,start,FALSE)   )   ## falling edge
+    start.edge[start.edge <= 0] = 0
+  }
+  
+  if (include.end == TRUE) {
+    end.edge = - diff(c(FALSE,end, FALSE) )   ## falling edge 
+    end.edge[end.edge <= 0] = 0
+  } else {
+    end.edge = diff(c(FALSE,end, FALSE) ) ## rising edge 
+    end.edge[end.edge <= 0] = 0
+  }
+  
+  a = which(start.edge == 1)
+  p = data.frame(b = which(end.edge == 1) )
+  
+  if(length(a) == 0 | nrow(p) == 0 ) {
+    return(rep(0,length(start) ))
+  }
+  
+  
+  p$b1 = sapply(p$b,function(x) ifelse(include.end== T,max(a[a<x]),max(a[a<=x]) ) )
+  
+  p1 = p%>%group_by(b1)%>%summarize(b = min(b) )%>%ungroup()
+#  p1 = aggregate(p$b, by = list(p$b1), min)  ## b1 is the grouping variable
+  p1 = p1[!is.infinite(p1$b1),]
+  
+  grps = rep(0,length(start)+1)
+  grps[p1$b1] = 1
+  grps[p1$b] = grps[p1$b]-1
+  
+  return(cumsum(grps)[1:length(start)])
+  
+} )
